@@ -1,0 +1,5 @@
+cmake-build-debug/
+test_image.jpg
+captured_image.jpg
+.idea
+.env
