@@ -28,6 +28,10 @@ namespace camTranslator {
         for (std::string &line : envFileContents) {
             int equalsIndex = line.find('=');
 
+            if (equalsIndex == -1) {
+                continue;
+            }
+
             std::string key = line.substr(0, equalsIndex);
             std::string value = line.substr(equalsIndex + 1);
 
