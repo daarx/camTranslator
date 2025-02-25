@@ -5,12 +5,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(OpenSSL REQUIRED)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 4.11 REQUIRED)
 
 if (APPLE)
     find_package(raylib REQUIRED)
 endif ()
-#find_package(OpenGL REQUIRED)
+find_package(OpenGL REQUIRED)
 
 if (WIN32)
     include_directories("E:/raylib-5.5_win64_msvc16/include")
@@ -20,6 +20,7 @@ endif ()
 add_executable(camTranslator
         main.cpp
         httplib.h
+        raygui.h
         Configuration.cpp
         Configuration.h
         Translator.cpp
@@ -29,13 +30,13 @@ add_executable(camTranslator
 
 #gdi32 winmm OpenGL::GL ${OPENGL_INCLUDE_DIRS}
 
-target_link_libraries(camTranslator PRIVATE ${OpenCV_LIBS} OpenSSL::SSL OpenSSL::Crypto raylib)
+target_link_libraries(camTranslator PRIVATE ${OpenCV_LIBS} OpenSSL::SSL OpenSSL::Crypto raylib OpenGL::GL)
 
 if (WIN32)
     target_link_libraries(camTranslator PRIVATE ws2_32 gdi32 winmm)
 endif()
 
-include_directories(${OPENSSL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
+include_directories(${OPENSSL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS})
 
 if (APPLE)
     target_link_libraries(${PROJECT_NAME} "-framework IOKit")
