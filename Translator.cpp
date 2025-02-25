@@ -20,11 +20,14 @@ namespace camTranslator {
         std::vector<char> image_buffer = load_image_from_disk();
 
         std::string extracted_text = extract_text_from_image(image_buffer, config);
+        // std::string extracted_text = "皆さまのことは丁重にもてなすよう大統領閣下より申し付かっております。";
 
         std::cout << "Extracted text: " << extracted_text << std::endl;
+
+        convert_text_to_speech(extracted_text, config);
     }
 
-    void Translator::capture_image_to_disk_with_webcam() {
+    void Translator::capture_image_to_disk_with_webcam(Configuration &config) {
         std::cout << "Opening camera" << std::endl;
 
         cv::VideoCapture cap{0, cv::VideoCaptureAPIs::CAP_DSHOW};
@@ -34,6 +37,11 @@ namespace camTranslator {
 
         cap.set(cv::VideoCaptureProperties::CAP_PROP_FRAME_WIDTH, 3840);
         cap.set(cv::VideoCaptureProperties::CAP_PROP_FRAME_HEIGHT, 2160);
+        cap.set(cv::VideoCaptureProperties::CAP_PROP_BRIGHTNESS, config.getCameraBrightness());
+        cap.set(cv::VideoCaptureProperties::CAP_PROP_CONTRAST, config.getCameraContrast());
+        cap.set(cv::VideoCaptureProperties::CAP_PROP_SHARPNESS, config.getCameraSharpness());
+        cap.set(cv::VideoCaptureProperties::CAP_PROP_SATURATION, config.getCameraSaturation());
+        cap.set(cv::VideoCaptureProperties::CAP_PROP_FOCUS, config.getCameraFocus());
 
         cv::Mat frame;
 
@@ -44,6 +52,7 @@ namespace camTranslator {
         }
 
         cv::imwrite("../captured_image.jpg", frame);
+        // TODO use imencode to create the image in memory
         std::cout << "Image saved as captured_image.jpg" << std::endl;
 
         cap.release();
@@ -93,19 +102,54 @@ namespace camTranslator {
 
         nlohmann::json json = nlohmann::json::parse(res->body);
         std::string extractedText;
+        extractedText.reserve(res->body.size());
 
         if (json.contains("regions")) {
             for (const auto &region: json["regions"]) {
                 for (const auto &line: region["lines"]) {
                     for (const auto &word: line["words"]) {
-                        extractedText += word["text"].get<std::string>() + " ";
+                        extractedText.append(word["text"].get<std::string>());
                     }
-                    extractedText += "\n";
                 }
             }
         }
 
         return extractedText;
+    }
+
+    void Translator::convert_text_to_speech(std::string text, Configuration &config) {
+        // curl -v -X POST -H "Ocp-Apim-Subscription-Key: E3yfGwWSVwn8wrDzu5wOzi6fDRxxKmD2TbifeLk9DOOJd7P6ySUkJQQJ99BBACi5YpzXJ3w3AAAYACOGdNcz" -H "X-Microsoft-OutputFormat: audio-16khz-128kbitrate-mono-mp3" -H "Content-Type: application/ssml+xml" --data "<speak version='1.0' xml:lang='ja-JP'><voice xml:lang='ja-JP' xml:gender='Female' name='ja-JP-NanamiNeural'>皆さまのことは丁重にもてなすよう大統領閣下より申し付かっております。</voice></speak>" "https://northeurope.tts.speech.microsoft.com/cognitiveservices/v1"
+        httplib::SSLClient client(config.getAzureSpeechUrl());
+        client.set_read_timeout(10, 0);
+        client.set_write_timeout(30, 0);
+        client.set_address_family(AF_INET);
+        client.set_ca_cert_path("../ca-bundle.crt");
+        client.enable_server_certificate_verification(true);
+        client.set_keep_alive(true);
+
+        httplib::Headers headers{
+            {"Ocp-Apim-Subscription-Key", config.getAzureSpeechKey() },
+            {"User-Agent", "camTranslator"},
+            {"Accept", "*/*"},
+            {"X-Microsoft-OutputFormat", "audio-16khz-128kbitrate-mono-mp3"}
+        };
+
+        std::string body = "<speak version='1.0' xml:lang='ja-JP'><voice xml:lang='ja-JP' xml:gender='Female' name='ja-JP-NanamiNeural'>" + text + "</voice></speak>";
+
+        std::cout << "Sending body: " << body << std::endl;
+
+        auto res = client.Post(config.getAzureSpeechPath(), headers, body, "application/ssml+xml");
+
+        if (res.error() != httplib::Error::Success) {
+            std::cout << "Error: " << to_string(res.error()) << std::endl;
+            return;
+        }
+
+        std::cout << "Status: " << res->status << std::endl;
+
+        std::ofstream file("../converted_audio.mp3", std::ios::binary);
+        file.write(res->body.data(), res->body.size());
+        file.close();
     }
 
     std::vector<char> Translator::load_image_from_disk() {

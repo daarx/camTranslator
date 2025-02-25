@@ -41,12 +41,49 @@ namespace camTranslator {
                 azureOcrPath = value;
             } else if (key == "AZURE_OCR_KEY") {
                 azureOcrKey = value;
+            } else if (key == "AZURE_SPEECH_URL") {
+                azureSpeechUrl = value;
+            } else if (key == "AZURE_SPEECH_PATH") {
+                azureSpeechPath = value;
+            } else if (key == "AZURE_SPEECH_KEY") {
+                azureSpeechKey = value;
+            } else if (key == "AZURE_TRANSLATE_URL") {
+                azureTranslateUrl = value;
+            } else if (key == "AZURE_TRANSLATE_PATH") {
+                azureTranslatePath = value;
+            } else if (key == "AZURE_TRANSLATE_KEY") {
+                azureTranslateKey = value;
+            } else if (key == "AZURE_REGION") {
+                azureRegion = value;
+            } else if (key == "CAMERA_BRIGHTNESS") {
+                cameraBrightness = std::stod(value);
+            } else if (key == "CAMERA_CONTRAST") {
+                cameraContrast = std::stod(value);
+            } else if (key == "CAMERA_SHARPNESS") {
+                cameraSharpness = std::stod(value);
+            } else if (key == "CAMERA_SATURATION") {
+                cameraSaturation = std::stod(value);
+            } else if (key == "CAMERA_FOCUS") {
+                cameraFocus = std::stod(value);
             }
         }
 
-        std::cout << "Url: " << azureOcrUrl << std::endl;
-        std::cout << "Path: " << azureOcrPath << std::endl;
-        std::cout << "Key: " << azureOcrKey << std::endl;
+        std::cout << "OCR Url: " << azureOcrUrl << std::endl;
+        std::cout << "OCR Path: " << azureOcrPath << std::endl;
+        std::cout << "OCR Key: " << azureOcrKey << std::endl;
+        std::cout << "Speech Url: " << azureSpeechUrl << std::endl;
+        std::cout << "Speech Path: " << azureSpeechPath << std::endl;
+        std::cout << "Speech Key: " << azureSpeechKey << std::endl;
+        std::cout << "Translate Url: " << azureTranslatePath << std::endl;
+        std::cout << "Translate Path: " << azureTranslateUrl << std::endl;
+        std::cout << "Translate Key: " << azureTranslateKey << std::endl;
+        std::cout << "Region: " << azureRegion << std::endl;
+
+        std::cout << "Brightness: " << cameraBrightness << std::endl;
+        std::cout << "Contrast: " << cameraContrast << std::endl;
+        std::cout << "Saturation: " << cameraSaturation << std::endl;
+        std::cout << "Sharpness: " << cameraSharpness << std::endl;
+        std::cout << "Focus: " << cameraFocus << std::endl;
     }
 
     std::string& Configuration::getAzureOcrUrl() {
@@ -59,5 +96,53 @@ namespace camTranslator {
 
     std::string& Configuration::getAzureOcrKey() {
         return azureOcrKey;
+    }
+
+    std::string & Configuration::getAzureSpeechUrl() {
+        return azureSpeechUrl;
+    }
+
+    std::string & Configuration::getAzureSpeechPath() {
+        return azureSpeechPath;
+    }
+
+    std::string & Configuration::getAzureSpeechKey() {
+        return azureSpeechKey;
+    }
+
+    std::string & Configuration::getAzureTranslateUrl() {
+        return azureTranslateUrl;
+    }
+
+    std::string & Configuration::getAzureTranslatePath() {
+        return azureTranslatePath;
+    }
+
+    std::string & Configuration::getAzureTranslateKey() {
+        return azureTranslateKey;
+    }
+
+    std::string & Configuration::getAzureRegion() {
+        return azureRegion;
+    }
+
+    double Configuration::getCameraBrightness() {
+        return cameraBrightness;
+    }
+
+    double Configuration::getCameraContrast() {
+        return cameraContrast;
+    }
+
+    double Configuration::getCameraSaturation() {
+        return cameraSaturation;
+    }
+
+    double Configuration::getCameraSharpness() {
+        return cameraSharpness;
+    }
+
+    double Configuration::getCameraFocus() {
+        return cameraFocus;
     }
 } // camTranslator

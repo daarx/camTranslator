@@ -15,9 +15,11 @@ public:
     static void translate_webcam_to_speech();
 
 private:
-    static void capture_image_to_disk_with_webcam();
+    static void capture_image_to_disk_with_webcam(Configuration &config);
 
     static std::string extract_text_from_image(std::vector<char> &image, Configuration &config);
+
+    static void convert_text_to_speech(std::string text, Configuration &config);
 
     static std::vector<char> load_image_from_disk();
 
