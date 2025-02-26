@@ -29,12 +29,20 @@ namespace camTranslator {
         float saturation = 128.0f;
         float focus = 128.0f;
 
+        // Crop rectangle
+        char cropX[20] = "0";
+        char cropY[20] = "0";
+        char cropWidth[20] = "0";
+        char cropHeight[20] = "0";
+
         static void matToTexture(cv::Mat &frame, Texture2D &texture);
         void updateCameraSettings();
         void readCurrentCameraSettings();
         void resetCameraSettings();
 
         Rectangle getGuiRectangle(int index) const;
+        Rectangle getGuiRectangle(int index, float length) const;
+        Rectangle getGuiRectangle(int index, float length, float xOffset) const;
     };
 }
 

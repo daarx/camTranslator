@@ -34,12 +34,16 @@ namespace camTranslator {
     ImageAdjuster::~ImageAdjuster() {
         capture->release();
 
-        std::cout << "Printing current camera settings: " << std::endl;
-        std::cout << "Brightness: " << brightness << std::endl;
-        std::cout << "Contrast  : " << contrast << std::endl;
-        std::cout << "Sharpness : " << sharpness << std::endl;
-        std::cout << "Saturation: " << saturation << std::endl;
-        std::cout << "Focus     : " << focus << std::endl;
+        std::cout << "Current camera settings: " << std::endl;
+        std::cout << "CAMERA_BRIGHTNESS=" << brightness << std::endl;
+        std::cout << "CAMERA_CONTRAST=" << contrast << std::endl;
+        std::cout << "CAMERA_SHARPNESS=" << sharpness << std::endl;
+        std::cout << "CAMERA_SATURATION=" << saturation << std::endl;
+        std::cout << "CAMERA_FOCUS=" << focus << std::endl;
+        std::cout << "IMAGE_CROP_X=" << cropX << std::endl;
+        std::cout << "IMAGE_CROP_Y=" << cropY << std::endl;
+        std::cout << "IMAGE_CROP_WIDTH=" << cropWidth << std::endl;
+        std::cout << "IMAGE_CROP_HEIGHT=" << cropHeight << std::endl;
     }
 
     void ImageAdjuster::adjustImage() {
@@ -54,6 +58,12 @@ namespace camTranslator {
 
         Rectangle rect{ 0, 0, (float) screenWidth, (float) screenHeight };
 #endif
+
+        char test[100] = "Test text";
+        bool editX = false;
+        bool editY = false;
+        bool editWidth = false;
+        bool editHeight = false;
 
         while (!WindowShouldClose()) {
             BeginDrawing();
@@ -103,6 +113,17 @@ namespace camTranslator {
             GuiSliderBar(getGuiRectangle(3), "Sharpness", TextFormat("%.2f", sharpness), &sharpness, 0, 256);
             GuiSliderBar(getGuiRectangle(4), "Saturation", TextFormat("%.2f", saturation), &saturation, 0, 256);
             GuiSliderBar(getGuiRectangle(5), "Focus", TextFormat("%.2f", focus), &focus, 0, 256);
+
+            GuiLabel(getGuiRectangle(7, 100), "Crop x coordinate: ");
+            if (GuiTextBox(getGuiRectangle(7, 100, 110), cropX, 10, editX)) editX = !editX;
+            GuiLabel(getGuiRectangle(8, 100), "Crop y coordinate: ");
+            if (GuiTextBox(getGuiRectangle(8, 100, 110), cropY, 10, editY)) editY = !editY;
+            GuiLabel(getGuiRectangle(9, 100), "Crop width: ");
+            if (GuiTextBox(getGuiRectangle(9, 100, 110), cropWidth, 10, editWidth)) editWidth = !editWidth;
+            GuiLabel(getGuiRectangle(10, 100), "Crop height: ");
+            if (GuiTextBox(getGuiRectangle(10, 100, 110), cropHeight, 10, editHeight)) editHeight = !editHeight;
+
+            DrawRectangleLines(TextToInteger(cropX), TextToInteger(cropY), TextToInteger(cropWidth), TextToInteger(cropHeight), { 255, 0, 0, 255 });
 
             updateCameraSettings();
 
@@ -163,13 +184,25 @@ namespace camTranslator {
         sharpness = 128;
         saturation = 128;
         focus = 0;
+        cropX[0] = '0'; cropX[1] = 0;
+        cropY[0] = '0'; cropY[1] = 0;
+        cropWidth[0] = '0'; cropWidth[1] = 0;
+        cropHeight[0] = '0'; cropHeight[1] = 0;
     }
 
     Rectangle ImageAdjuster::getGuiRectangle(int index) const {
+        return getGuiRectangle(index, 256, 0);
+    }
+
+    Rectangle ImageAdjuster::getGuiRectangle(int index, float length) const {
+        return getGuiRectangle(index, length, 0);
+    }
+
+    Rectangle ImageAdjuster::getGuiRectangle(int index, float length, float xOffset) const {
         return {
-            screenWidth * 4.0f / 5.0f,
+            screenWidth * 4.0f / 5.0f + xOffset,
             screenHeight / 20.0f + 35.0f * index,
-            256,
+            length,
             30
         };
     }
