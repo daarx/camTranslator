@@ -26,7 +26,9 @@ add_executable(camTranslator
         Translator.cpp
         Translator.h
         ImageAdjuster.cpp
-        ImageAdjuster.h)
+        ImageAdjuster.h
+        AudioPlayer.cpp
+        AudioPlayer.h)
 
 #gdi32 winmm OpenGL::GL ${OPENGL_INCLUDE_DIRS}
 

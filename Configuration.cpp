@@ -65,6 +65,18 @@ namespace camTranslator {
                 cameraSaturation = std::stod(value);
             } else if (key == "CAMERA_FOCUS") {
                 cameraFocus = std::stod(value);
+            } else if (key == "IMAGE_CROP_X") {
+                cropX = std::stoi(value);
+            } else if (key == "IMAGE_CROP_Y") {
+                cropY = std::stoi(value);
+            } else if (key == "IMAGE_CROP_WIDTH") {
+                cropWidth = std::stoi(value);
+            } else if (key == "IMAGE_CROP_HEIGHT") {
+                cropHeight = std::stoi(value);
+            } else if (key == "SCREEN_MAX_WIDTH") {
+                screenMaxWidth = std::stoi(value);
+            } else if (key == "SCREEN_MAX_HEIGHT") {
+                screenMaxHeight = std::stoi(value);
             }
         }
 
@@ -84,6 +96,13 @@ namespace camTranslator {
         std::cout << "Saturation: " << cameraSaturation << std::endl;
         std::cout << "Sharpness: " << cameraSharpness << std::endl;
         std::cout << "Focus: " << cameraFocus << std::endl;
+
+        std::cout << "Crop X: " << cropX << std::endl;
+        std::cout << "Crop Y: " << cropY << std::endl;
+        std::cout << "Crop Width: " << cropWidth << std::endl;
+        std::cout << "Crop Height: " << cropHeight << std::endl;
+        std::cout << "Screen max width: " << screenMaxWidth << std::endl;
+        std::cout << "Screen max height: " << screenMaxHeight << std::endl;
     }
 
     std::string& Configuration::getAzureOcrUrl() {
@@ -126,23 +145,47 @@ namespace camTranslator {
         return azureRegion;
     }
 
-    double Configuration::getCameraBrightness() {
+    double Configuration::getCameraBrightness() const {
         return cameraBrightness;
     }
 
-    double Configuration::getCameraContrast() {
+    double Configuration::getCameraContrast() const {
         return cameraContrast;
     }
 
-    double Configuration::getCameraSaturation() {
+    double Configuration::getCameraSaturation() const {
         return cameraSaturation;
     }
 
-    double Configuration::getCameraSharpness() {
+    double Configuration::getCameraSharpness() const {
         return cameraSharpness;
     }
 
-    double Configuration::getCameraFocus() {
+    double Configuration::getCameraFocus() const {
         return cameraFocus;
+    }
+
+    int Configuration::getCropX() const {
+        return cropX;
+    }
+
+    int Configuration::getCropY() const {
+        return cropY;
+    }
+
+    int Configuration::getCropWidth() const {
+        return cropWidth;
+    }
+
+    int Configuration::getCropHeight() const {
+        return cropHeight;
+    }
+
+    int Configuration::getScreenMaxWidth() const {
+        return screenMaxWidth;
+    }
+
+    int Configuration::getScreenMaxHeight() const {
+        return screenMaxHeight;
     }
 } // camTranslator

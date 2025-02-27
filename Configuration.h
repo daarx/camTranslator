@@ -20,11 +20,18 @@ class Configuration {
     std::string azureTranslateKey;
     std::string azureRegion;
 
-    double cameraBrightness;
-    double cameraContrast;
-    double cameraSaturation;
-    double cameraSharpness;
-    double cameraFocus;
+    double cameraBrightness = 128;
+    double cameraContrast = 128;
+    double cameraSaturation = 128;
+    double cameraSharpness = 128;
+    double cameraFocus = 0;
+
+    int cropX = 0;
+    int cropY = 0;
+    int cropWidth = 0;
+    int cropHeight = 0;
+    int screenMaxWidth = 0;
+    int screenMaxHeight = 0;
 
 public:
     Configuration();
@@ -40,11 +47,18 @@ public:
     std::string& getAzureTranslateKey();
     std::string& getAzureRegion();
 
-    double getCameraBrightness();
-    double getCameraContrast();
-    double getCameraSaturation();
-    double getCameraSharpness();
-    double getCameraFocus();
+    double getCameraBrightness() const;
+    double getCameraContrast() const;
+    double getCameraSaturation() const;
+    double getCameraSharpness() const;
+    double getCameraFocus() const;
+
+    int getCropX() const;
+    int getCropY() const;
+    int getCropWidth() const;
+    int getCropHeight() const;
+    int getScreenMaxWidth() const;
+    int getScreenMaxHeight() const;
 };
 
 } // camTranslator

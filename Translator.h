@@ -24,6 +24,8 @@ private:
     static std::vector<char> load_image_from_disk();
 
     static void save_image_to_disk(std::vector<char> image);
+
+    static void play_sound_file();
 };
 
 } // camTranslator

@@ -9,8 +9,11 @@
 #include <memory>
 #include <opencv2/opencv.hpp>
 
+#include "Configuration.h"
+
 namespace camTranslator {
     ImageAdjuster::ImageAdjuster() {
+        Configuration config;
         setLogLevel(cv::utils::logging::LOG_LEVEL_ERROR);
 
         std::cout << "Opening camera" << std::endl;
@@ -27,6 +30,28 @@ namespace camTranslator {
 
         screenWidth = static_cast<int>(capture->get(cv::CAP_PROP_FRAME_WIDTH));
         screenHeight = static_cast<int>(capture->get(cv::CAP_PROP_FRAME_HEIGHT));
+
+        if (config.getScreenMaxWidth() > 0 && screenWidth > config.getScreenMaxWidth()) {
+            screenWidth = config.getScreenMaxWidth();
+        }
+        if (config.getScreenMaxHeight() > 0 && screenHeight > config.getScreenMaxHeight()) {
+            screenHeight = config.getScreenMaxHeight();
+        }
+
+        capture->set(cv::VideoCaptureProperties::CAP_PROP_BRIGHTNESS, config.getCameraBrightness());
+        capture->set(cv::VideoCaptureProperties::CAP_PROP_CONTRAST, config.getCameraContrast());
+        capture->set(cv::VideoCaptureProperties::CAP_PROP_SHARPNESS, config.getCameraSharpness());
+        capture->set(cv::VideoCaptureProperties::CAP_PROP_SATURATION, config.getCameraSaturation());
+        capture->set(cv::VideoCaptureProperties::CAP_PROP_FOCUS, config.getCameraFocus());
+
+        std::string tempCropX = std::to_string(config.getCropX());
+        std::memcpy(cropX, tempCropX.data(), sizeof(char) * tempCropX.size());
+        std::string tempCropY = std::to_string(config.getCropY());
+        std::memcpy(cropY, tempCropY.data(), sizeof(char) * tempCropY.size());
+        std::string tempCropWidth = std::to_string(config.getCropWidth());
+        std::memcpy(cropWidth, tempCropWidth.data(), sizeof(char) * tempCropWidth.size());
+        std::string tempCropHeight = std::to_string(config.getCropHeight());
+        std::memcpy(cropHeight, tempCropHeight.data(), sizeof(char) * tempCropHeight.size());
 
         readCurrentCameraSettings();
     }

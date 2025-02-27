@@ -11,20 +11,40 @@
 #include "json.hpp"
 #include <opencv2/opencv.hpp>
 
+#include "AudioPlayer.h"
+
 namespace camTranslator {
     void Translator::translate_webcam_to_speech() {
         SetConsoleOutputCP(CP_UTF8);
 
         Configuration config;
 
-        std::vector<char> image_buffer = load_image_from_disk();
+        bool running = true;
 
-        std::string extracted_text = extract_text_from_image(image_buffer, config);
-        // std::string extracted_text = "皆さまのことは丁重にもてなすよう大統領閣下より申し付かっております。";
+        while (running) {
+            char input;
 
-        std::cout << "Extracted text: " << extracted_text << std::endl;
+            std::cout << "Press enter to capture an image. Type Q and enter to quit." << std::endl;
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Clear input buffer
+            input = std::cin.get();
 
-        convert_text_to_speech(extracted_text, config);
+            if (input == 'Q' || input == 'q') {
+                running = false;
+                continue;
+            }
+
+            // capture_image_to_disk_with_webcam(config);
+            std::vector<char> image_buffer = load_image_from_disk();
+
+            std::string extracted_text = extract_text_from_image(image_buffer, config);
+            // std::string extracted_text = "皆さまのことは丁重にもてなすよう大統領閣下より申し付かっております。";
+
+            std::cout << "Extracted text: " << extracted_text << std::endl;
+
+            convert_text_to_speech(extracted_text, config);
+
+            camTranslatorAudio::AudioPlayer::playSound();
+        }
     }
 
     void Translator::capture_image_to_disk_with_webcam(Configuration &config) {
@@ -49,6 +69,11 @@ namespace camTranslator {
 
         if (frame.empty()) {
             throw std::runtime_error("Error: Captured frame is empty!");
+        }
+
+        if (config.getCropWidth() > 0 && config.getCropHeight() > 0) {
+            cv::Rect roi(config.getCropX(), config.getCropY(), config.getCropWidth(), config.getCropHeight());
+            frame = frame(roi).clone();
         }
 
         cv::imwrite("../captured_image.jpg", frame);
@@ -180,5 +205,9 @@ namespace camTranslator {
         file.write(image.data(), image.size());
 
         file.close();
+    }
+
+    void Translator::play_sound_file() {
+
     }
 } // camTranslator
