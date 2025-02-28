@@ -6,19 +6,34 @@
 
 #include <fstream>
 #include <iostream>
-#define CPPHTTPLIB_OPENSSL_SUPPORT
-#include "httplib.h"
 #include "json.hpp"
-#include <opencv2/opencv.hpp>
 
 #include "AudioPlayer.h"
 
 namespace camTranslator {
-    void Translator::translate_webcam_to_speech() {
+    Translator::Translator() {
         SetConsoleOutputCP(CP_UTF8);
+        std::cout << "Initializing configurations..." << std::endl;
+        config = std::make_unique<Configuration>();
 
-        Configuration config;
+        std::cout << "Initializing webcam..." << std::endl;
+        initializeWebcam();
 
+        std::cout << "Initializing OCR web client..." << std::endl;
+        initializeOcrClient();
+
+        std::cout << "Initializing TTS web client..." << std::endl;
+        initializeTTSClient();
+
+        std::cout << "Initializing audio player..." << std::endl;
+        initializeAudioPlayer();
+    }
+
+    Translator::~Translator() {
+        capture->release();
+    }
+
+    void Translator::startProgramLoop() const {
         bool running = true;
 
         while (running) {
@@ -34,94 +49,103 @@ namespace camTranslator {
             }
 
             // capture_image_to_disk_with_webcam(config);
-            std::vector<char> image_buffer = load_image_from_disk();
+            std::vector<char> image_buffer = loadImageFromDisk();
 
-            std::string extracted_text = extract_text_from_image(image_buffer, config);
+            std::string extracted_text = extractTextFromImage(image_buffer);
             // std::string extracted_text = "皆さまのことは丁重にもてなすよう大統領閣下より申し付かっております。";
 
             std::cout << "Extracted text: " << extracted_text << std::endl;
 
-            convert_text_to_speech(extracted_text, config);
+            convertTextToSpeech(extracted_text);
 
-            camTranslatorAudio::AudioPlayer::playSound();
+            audioPLayer->playSound();
         }
     }
 
-    void Translator::capture_image_to_disk_with_webcam(Configuration &config) {
-        std::cout << "Opening camera" << std::endl;
+    void Translator::initializeWebcam() {
+        capture = std::make_unique<cv::VideoCapture>(0, cv::VideoCaptureAPIs::CAP_DSHOW);
 
-        cv::VideoCapture cap{0, cv::VideoCaptureAPIs::CAP_DSHOW};
-        if (!cap.isOpened()) {
+        if (!capture->isOpened()) {
             throw std::runtime_error("Could not open the camera!");
         }
 
-        cap.set(cv::VideoCaptureProperties::CAP_PROP_FRAME_WIDTH, 3840);
-        cap.set(cv::VideoCaptureProperties::CAP_PROP_FRAME_HEIGHT, 2160);
-        cap.set(cv::VideoCaptureProperties::CAP_PROP_BRIGHTNESS, config.getCameraBrightness());
-        cap.set(cv::VideoCaptureProperties::CAP_PROP_CONTRAST, config.getCameraContrast());
-        cap.set(cv::VideoCaptureProperties::CAP_PROP_SHARPNESS, config.getCameraSharpness());
-        cap.set(cv::VideoCaptureProperties::CAP_PROP_SATURATION, config.getCameraSaturation());
-        cap.set(cv::VideoCaptureProperties::CAP_PROP_FOCUS, config.getCameraFocus());
+        capture->set(cv::VideoCaptureProperties::CAP_PROP_FRAME_WIDTH, 3840);
+        capture->set(cv::VideoCaptureProperties::CAP_PROP_FRAME_HEIGHT, 2160);
+        capture->set(cv::VideoCaptureProperties::CAP_PROP_BRIGHTNESS, config->getCameraBrightness());
+        capture->set(cv::VideoCaptureProperties::CAP_PROP_CONTRAST, config->getCameraContrast());
+        capture->set(cv::VideoCaptureProperties::CAP_PROP_SHARPNESS, config->getCameraSharpness());
+        capture->set(cv::VideoCaptureProperties::CAP_PROP_SATURATION, config->getCameraSaturation());
+        capture->set(cv::VideoCaptureProperties::CAP_PROP_FOCUS, config->getCameraFocus());
 
+        double width = capture->get(cv::VideoCaptureProperties::CAP_PROP_FRAME_WIDTH);
+        double height = capture->get(cv::VideoCaptureProperties::CAP_PROP_FRAME_HEIGHT);
+        std::cout << "Initialized camera with resolution: " << width << "x" << height << std::endl;
+    }
+
+    void Translator::initializeOcrClient() {
+        ocrClient = std::make_unique<httplib::SSLClient>(config->getAzureOcrUrl());
+        ocrClient->set_read_timeout(10, 0);
+        ocrClient->set_write_timeout(30, 0);
+        ocrClient->set_address_family(AF_INET);
+        ocrClient->set_ca_cert_path("../ca-bundle.crt");
+        ocrClient->enable_server_certificate_verification(true);
+        ocrClient->set_keep_alive(true);
+
+        ocrHeaders = {
+            {"Ocp-Apim-Subscription-Key", config->getAzureOcrKey()},
+            {"User-Agent", "curl/8.8.0"},
+            {"Accept", "*/*"}
+        };
+    }
+
+    void Translator::initializeTTSClient() {
+        ttsClient = std::make_unique<httplib::SSLClient>(config->getAzureSpeechUrl());
+        ttsClient->set_read_timeout(10, 0);
+        ttsClient->set_write_timeout(30, 0);
+        ttsClient->set_address_family(AF_INET);
+        ttsClient->set_ca_cert_path("../ca-bundle.crt");
+        ttsClient->enable_server_certificate_verification(true);
+        ttsClient->set_keep_alive(true);
+
+        ttsHeaders = {
+            {"Ocp-Apim-Subscription-Key", config->getAzureSpeechKey()},
+            {"User-Agent", "camTranslator"},
+            {"Accept", "*/*"},
+            {"X-Microsoft-OutputFormat", "audio-16khz-128kbitrate-mono-mp3"}
+        };
+    }
+
+    void Translator::initializeAudioPlayer() {
+        audioPLayer = std::make_unique<camTranslatorAudio::AudioPlayer>();
+    }
+
+    void Translator::captureImageToDiskWithWebcam() const {
         cv::Mat frame;
 
-        cap >> frame;
+        (*capture) >> frame;
 
         if (frame.empty()) {
             throw std::runtime_error("Error: Captured frame is empty!");
         }
 
-        if (config.getCropWidth() > 0 && config.getCropHeight() > 0) {
-            cv::Rect roi(config.getCropX(), config.getCropY(), config.getCropWidth(), config.getCropHeight());
+        if (config->getCropWidth() > 0 && config->getCropHeight() > 0) {
+            cv::Rect roi(config->getCropX(), config->getCropY(), config->getCropWidth(), config->getCropHeight());
             frame = frame(roi).clone();
         }
 
         cv::imwrite("../captured_image.jpg", frame);
         // TODO use imencode to create the image in memory
         std::cout << "Image saved as captured_image.jpg" << std::endl;
-
-        cap.release();
     }
 
-    std::string Translator::extract_text_from_image(std::vector<char> &image, Configuration &config) {
-        // curl -v -X GET -H "Ocp-Apim-Subscription-Key: 2caGusEMW9Xox7o2pWQdp4Jp1If2HPXpaubYQDcpbfMj8HVlgvBUJQQJ99BBACi5YpzXJ3w3AAAFACOGdIpl" "https://daarx-autotranslate.cognitiveservices.azure.com/vision/v3.2/models"
-        httplib::SSLClient client(config.getAzureOcrUrl());
-        client.set_read_timeout(10, 0);
-        client.set_write_timeout(30, 0);
-        client.set_address_family(AF_INET);
-        client.set_ca_cert_path("../ca-bundle.crt");
-        client.enable_server_certificate_verification(true);
-        // client.set_logger([](const httplib::Request &request, const httplib::Response &response) {
-        //     std::cout << "[httplib] " << response.status << std::endl;
-        // });
-        client.set_keep_alive(true);
-
-        httplib::Headers headers{
-            {"Ocp-Apim-Subscription-Key", config.getAzureOcrKey()},
-            {"User-Agent", "curl/8.8.0"},
-            {"Accept", "*/*"}
-        };
-
-        auto res = client.Post(config.getAzureOcrPath(), headers, std::string(image.begin(), image.end()),
+    std::string Translator::extractTextFromImage(std::vector<char> &image) const {
+        auto res = ocrClient->Post(config->getAzureOcrPath(), ocrHeaders, std::string(image.begin(), image.end()),
                                "application/octet-stream");
 
         if (res.error() != httplib::Error::Success) {
             std::cout << "Error: " << to_string(res.error()) << std::endl;
             return "Failure";
         }
-
-        // auto res = client.Get(AZURE_MODELS_PATH, headers);
-        // if (res) {
-        //     std::cout << "Azure Response: " << res->body << std::endl;
-        // } else {
-        //     std::cerr << "GET Request Failed: " << httplib::to_string(res.error()) << std::endl;
-        // }
-
-        // auto result = client.get_openssl_verify_result();
-        // if (result) {
-        //     std::cout << "error";
-        //     std::cout << "verify error: " << X509_verify_cert_error_string(result)    << std::endl;
-        // }
 
         std::cout << "Status: " << res->status << std::endl;
 
@@ -142,28 +166,12 @@ namespace camTranslator {
         return extractedText;
     }
 
-    void Translator::convert_text_to_speech(std::string text, Configuration &config) {
-        // curl -v -X POST -H "Ocp-Apim-Subscription-Key: E3yfGwWSVwn8wrDzu5wOzi6fDRxxKmD2TbifeLk9DOOJd7P6ySUkJQQJ99BBACi5YpzXJ3w3AAAYACOGdNcz" -H "X-Microsoft-OutputFormat: audio-16khz-128kbitrate-mono-mp3" -H "Content-Type: application/ssml+xml" --data "<speak version='1.0' xml:lang='ja-JP'><voice xml:lang='ja-JP' xml:gender='Female' name='ja-JP-NanamiNeural'>皆さまのことは丁重にもてなすよう大統領閣下より申し付かっております。</voice></speak>" "https://northeurope.tts.speech.microsoft.com/cognitiveservices/v1"
-        httplib::SSLClient client(config.getAzureSpeechUrl());
-        client.set_read_timeout(10, 0);
-        client.set_write_timeout(30, 0);
-        client.set_address_family(AF_INET);
-        client.set_ca_cert_path("../ca-bundle.crt");
-        client.enable_server_certificate_verification(true);
-        client.set_keep_alive(true);
-
-        httplib::Headers headers{
-            {"Ocp-Apim-Subscription-Key", config.getAzureSpeechKey() },
-            {"User-Agent", "camTranslator"},
-            {"Accept", "*/*"},
-            {"X-Microsoft-OutputFormat", "audio-16khz-128kbitrate-mono-mp3"}
-        };
-
+    void Translator::convertTextToSpeech(std::string text) const {
         std::string body = "<speak version='1.0' xml:lang='ja-JP'><voice xml:lang='ja-JP' xml:gender='Female' name='ja-JP-NanamiNeural'>" + text + "</voice></speak>";
 
         std::cout << "Sending body: " << body << std::endl;
 
-        auto res = client.Post(config.getAzureSpeechPath(), headers, body, "application/ssml+xml");
+        auto res = ttsClient->Post(config->getAzureSpeechPath(), ttsHeaders, body, "application/ssml+xml");
 
         if (res.error() != httplib::Error::Success) {
             std::cout << "Error: " << to_string(res.error()) << std::endl;
@@ -177,7 +185,7 @@ namespace camTranslator {
         file.close();
     }
 
-    std::vector<char> Translator::load_image_from_disk() {
+    std::vector<char> Translator::loadImageFromDisk() {
         std::ifstream file("../test_image.jpg", std::ios_base::in | std::ios_base::binary);
 
         if (!file.is_open()) {
@@ -196,18 +204,6 @@ namespace camTranslator {
 
         std::cout << "Image loaded successfully! Size: " << buffer.size() << std::endl;
 
-        return buffer;
-    }
-
-    void Translator::save_image_to_disk(std::vector<char> image) {
-        std::ofstream file("captured_image.jpg", std::ios_base::out | std::ios_base::binary);
-
-        file.write(image.data(), image.size());
-
-        file.close();
-    }
-
-    void Translator::play_sound_file() {
-
+        return std::move(buffer);
     }
 } // camTranslator

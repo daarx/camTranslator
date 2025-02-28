@@ -3,11 +3,11 @@
 //
 
 #include "ImageAdjuster.h"
-#include "raylib.h"
+
+#include <memory>
+
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
-#include <memory>
-#include <opencv2/opencv.hpp>
 
 #include "Configuration.h"
 

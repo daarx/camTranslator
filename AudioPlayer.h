@@ -8,7 +8,9 @@
 namespace camTranslatorAudio {
     class AudioPlayer {
     public:
-        static void playSound();
+        AudioPlayer();
+        ~AudioPlayer();
+        void playSound();
     };
 }
 

@@ -4,8 +4,8 @@
 
 #ifndef IMAGEADJUSTER_H
 #define IMAGEADJUSTER_H
-#include <raylib.h>
-#include <opencv2/opencv.hpp>
+
+#include "raylib_opencv_headers.h"
 
 #define UPDATE_TEXTURE_WORKAROUND
 

@@ -6,26 +6,41 @@
 #define TRANSLATOR_H
 #include <vector>
 
+#include "raylib_opencv_headers.h"
+
 #include "Configuration.h"
+#include "AudioPlayer.h"
+#define CPPHTTPLIB_OPENSSL_SUPPORT
+#include "httplib.h"
 
 namespace camTranslator {
 
 class Translator {
 public:
-    static void translate_webcam_to_speech();
+    Translator();
+    ~Translator();
+    void startProgramLoop() const;
 
 private:
-    static void capture_image_to_disk_with_webcam(Configuration &config);
+    std::unique_ptr<Configuration> config;
+    std::unique_ptr<cv::VideoCapture> capture;
+    std::unique_ptr<httplib::SSLClient> ocrClient;
+    std::unique_ptr<httplib::SSLClient> ttsClient;
 
-    static std::string extract_text_from_image(std::vector<char> &image, Configuration &config);
+    httplib::Headers ocrHeaders;
+    httplib::Headers ttsHeaders;
 
-    static void convert_text_to_speech(std::string text, Configuration &config);
+    std::unique_ptr<camTranslatorAudio::AudioPlayer> audioPLayer;
 
-    static std::vector<char> load_image_from_disk();
+    void initializeWebcam();
+    void initializeOcrClient();
+    void initializeTTSClient();
+    void initializeAudioPlayer();
 
-    static void save_image_to_disk(std::vector<char> image);
-
-    static void play_sound_file();
+    void captureImageToDiskWithWebcam() const;
+    std::string extractTextFromImage(std::vector<char> &image) const;
+    void convertTextToSpeech(std::string text) const;
+    static std::vector<char> loadImageFromDisk();
 };
 
 } // camTranslator

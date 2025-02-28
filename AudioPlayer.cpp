@@ -4,13 +4,19 @@
 
 #include "AudioPlayer.h"
 
+#include "raylib_opencv_headers.h"
+
 #include <thread>
 
-#include "raylib.h"
+camTranslatorAudio::AudioPlayer::AudioPlayer() {
+    InitAudioDevice();
+}
+
+camTranslatorAudio::AudioPlayer::~AudioPlayer() {
+    CloseAudioDevice();
+}
 
 void camTranslatorAudio::AudioPlayer::playSound() {
-    InitAudioDevice();
-
     Sound soundFile = LoadSound("../converted_audio.mp3");
 
     PlaySound(soundFile);
@@ -21,5 +27,4 @@ void camTranslatorAudio::AudioPlayer::playSound() {
     }
 
     UnloadSound(soundFile);
-    CloseAudioDevice();
 }
