@@ -17,19 +17,30 @@ namespace camTranslator {
         setLogLevel(cv::utils::logging::LOG_LEVEL_ERROR);
 
         std::cout << "Opening camera" << std::endl;
-
+#if defined(_WIN32)
         cv::setNumThreads(1);
-        capture = std::make_unique<cv::VideoCapture>(0, cv::VideoCaptureAPIs::CAP_DSHOW);
+        int api = cv::VideoCaptureAPIs::CAP_DSHOW;
+#endif
+#if defined(__APPLE__)
+        int api = cv::VideoCaptureAPIs::CAP_AVFOUNDATION;
+#endif
+
+
+        capture = std::make_unique<cv::VideoCapture>(0, api);
         if (!capture->isOpened()) {
             throw std::runtime_error("Could not open the camera!");
         }
 
         capture->set(cv::VideoCaptureProperties::CAP_PROP_FRAME_WIDTH, 3840);
         capture->set(cv::VideoCaptureProperties::CAP_PROP_FRAME_HEIGHT, 2160);
+#if defined(_WIN32)
         capture->set(cv::VideoCaptureProperties::CAP_PROP_N_THREADS, 1);
+#endif
 
         screenWidth = static_cast<int>(capture->get(cv::CAP_PROP_FRAME_WIDTH));
         screenHeight = static_cast<int>(capture->get(cv::CAP_PROP_FRAME_HEIGHT));
+        imageWidth = screenWidth;
+        imageHeight = screenHeight;
 
         if (config.getScreenMaxWidth() > 0 && screenWidth > config.getScreenMaxWidth()) {
             screenWidth = config.getScreenMaxWidth();
@@ -65,15 +76,36 @@ namespace camTranslator {
         std::cout << "CAMERA_SHARPNESS=" << sharpness << std::endl;
         std::cout << "CAMERA_SATURATION=" << saturation << std::endl;
         std::cout << "CAMERA_FOCUS=" << focus << std::endl;
-        std::cout << "IMAGE_CROP_X=" << cropX << std::endl;
-        std::cout << "IMAGE_CROP_Y=" << cropY << std::endl;
-        std::cout << "IMAGE_CROP_WIDTH=" << cropWidth << std::endl;
-        std::cout << "IMAGE_CROP_HEIGHT=" << cropHeight << std::endl;
+
+        if (imageWidth == screenWidth && imageHeight == screenHeight) {
+            std::cout << "IMAGE_CROP_X=" << cropX << std::endl;
+            std::cout << "IMAGE_CROP_Y=" << cropY << std::endl;
+            std::cout << "IMAGE_CROP_WIDTH=" << cropWidth << std::endl;
+            std::cout << "IMAGE_CROP_HEIGHT=" << cropHeight << std::endl;
+        } else {
+            int cropXInt = atoi(cropX);
+            int cropYInt = atoi(cropY);
+            int cropWidthInt = atoi(cropWidth);
+            int cropHeightInt = atoi(cropHeight);
+
+            float scaleHorizontal = static_cast<float>(imageWidth) / static_cast<float>(screenWidth);
+            float scaleVerical = static_cast<float>(imageHeight) / static_cast<float>(screenHeight);
+
+            cropXInt = static_cast<int>(static_cast<float>(cropXInt) * scaleHorizontal);
+            cropYInt = static_cast<int>(static_cast<float>(cropYInt) * scaleVerical);
+            cropWidthInt = static_cast<int>(static_cast<float>(cropWidthInt) * scaleHorizontal);
+            cropHeightInt = static_cast<int>(static_cast<float>(cropHeightInt) * scaleVerical);
+
+            std::cout << "IMAGE_CROP_X=" << cropXInt << std::endl;
+            std::cout << "IMAGE_CROP_Y=" << cropYInt << std::endl;
+            std::cout << "IMAGE_CROP_WIDTH=" << cropWidthInt << std::endl;
+            std::cout << "IMAGE_CROP_HEIGHT=" << cropHeightInt << std::endl;
+        }
     }
 
     void ImageAdjuster::adjustImage() {
         SetTraceLogLevel(LOG_DEBUG);
-        InitWindow(screenWidth, screenHeight, "Hello World");
+        InitWindow(screenWidth, screenHeight, "Camera image adjuster");
         SetTargetFPS(30);
 
 #ifndef UPDATE_TEXTURE_WORKAROUND
@@ -84,11 +116,13 @@ namespace camTranslator {
         Rectangle rect{ 0, 0, (float) screenWidth, (float) screenHeight };
 #endif
 
-        char test[100] = "Test text";
         bool editX = false;
         bool editY = false;
         bool editWidth = false;
         bool editHeight = false;
+
+        // Rectangle sourceRect{ 0, 0, (float) imageWidth, (float) imageHeight };
+        // Rectangle destRect{ 0, 0, (float) screenWidth, (float) screenHeight };
 
         while (!WindowShouldClose()) {
             BeginDrawing();
@@ -121,7 +155,7 @@ namespace camTranslator {
             };
             Texture2D texture = LoadTextureFromImage(image);
 #endif
-            // DrawTexturePro(texture, rect, rect, Vector2{}, 0.0f, WHITE);
+            // DrawTexturePro(texture, sourceRect, destRect, Vector2{}, 0.0f, WHITE);
             DrawTexture(texture, 0, 0, WHITE);
 
             // GUI

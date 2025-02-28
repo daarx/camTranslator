@@ -21,6 +21,8 @@ namespace camTranslator {
 
         int screenWidth;
         int screenHeight;
+        int imageWidth;
+        int imageHeight;
 
         // Congiguration options
         float brightness = 128.0f;

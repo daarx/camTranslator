@@ -12,7 +12,7 @@
 
 namespace camTranslator {
     Translator::Translator() {
-        SetConsoleOutputCP(CP_UTF8);
+        //SetConsoleOutputCP(CP_UTF8);
         std::cout << "Initializing configurations..." << std::endl;
         config = std::make_unique<Configuration>();
 
@@ -48,7 +48,7 @@ namespace camTranslator {
                 continue;
             }
 
-            // capture_image_to_disk_with_webcam(config);
+            captureImageToDiskWithWebcam();
             std::vector<char> image_buffer = loadImageFromDisk();
 
             std::string extracted_text = extractTextFromImage(image_buffer);
@@ -63,7 +63,7 @@ namespace camTranslator {
     }
 
     void Translator::initializeWebcam() {
-        capture = std::make_unique<cv::VideoCapture>(0, cv::VideoCaptureAPIs::CAP_DSHOW);
+        capture = std::make_unique<cv::VideoCapture>(0);
 
         if (!capture->isOpened()) {
             throw std::runtime_error("Could not open the camera!");
@@ -186,7 +186,7 @@ namespace camTranslator {
     }
 
     std::vector<char> Translator::loadImageFromDisk() {
-        std::ifstream file("../test_image.jpg", std::ios_base::in | std::ios_base::binary);
+        std::ifstream file("../captured_image.jpg", std::ios_base::in | std::ios_base::binary);
 
         if (!file.is_open()) {
             throw std::runtime_error("Could not open file!");
