@@ -55,14 +55,33 @@ namespace camTranslator {
         capture->set(cv::VideoCaptureProperties::CAP_PROP_SATURATION, config.getCameraSaturation());
         capture->set(cv::VideoCaptureProperties::CAP_PROP_FOCUS, config.getCameraFocus());
 
-        std::string tempCropX = std::to_string(config.getCropX());
-        std::memcpy(cropX, tempCropX.data(), sizeof(char) * tempCropX.size());
-        std::string tempCropY = std::to_string(config.getCropY());
-        std::memcpy(cropY, tempCropY.data(), sizeof(char) * tempCropY.size());
-        std::string tempCropWidth = std::to_string(config.getCropWidth());
-        std::memcpy(cropWidth, tempCropWidth.data(), sizeof(char) * tempCropWidth.size());
-        std::string tempCropHeight = std::to_string(config.getCropHeight());
-        std::memcpy(cropHeight, tempCropHeight.data(), sizeof(char) * tempCropHeight.size());
+        if (imageWidth == screenWidth && imageHeight == screenHeight) {
+            std::string tempCropX = std::to_string(config.getCropX());
+            std::memcpy(cropX, tempCropX.data(), sizeof(char) * tempCropX.size());
+            std::string tempCropY = std::to_string(config.getCropY());
+            std::memcpy(cropY, tempCropY.data(), sizeof(char) * tempCropY.size());
+            std::string tempCropWidth = std::to_string(config.getCropWidth());
+            std::memcpy(cropWidth, tempCropWidth.data(), sizeof(char) * tempCropWidth.size());
+            std::string tempCropHeight = std::to_string(config.getCropHeight());
+            std::memcpy(cropHeight, tempCropHeight.data(), sizeof(char) * tempCropHeight.size());
+        } else {
+            float verticalScale = static_cast<float>(screenWidth) / static_cast<float>(imageWidth);
+            float horizontalScale = static_cast<float>(screenHeight) / static_cast<float>(imageHeight);
+
+            int newCropX = static_cast<int>(static_cast<float>(config.getCropX()) * verticalScale);
+            int newCropY = static_cast<int>(static_cast<float>(config.getCropY()) * horizontalScale);
+            int newCropWidth = static_cast<int>(static_cast<float>(config.getCropWidth()) * horizontalScale);
+            int newCropHeight = static_cast<int>(static_cast<float>(config.getCropHeight()) * verticalScale);
+
+            std::string tempCropX = std::to_string(newCropX);
+            std::memcpy(cropX, tempCropX.data(), sizeof(char) * tempCropX.size());
+            std::string tempCropY = std::to_string(newCropY);
+            std::memcpy(cropY, tempCropY.data(), sizeof(char) * tempCropY.size());
+            std::string tempCropWidth = std::to_string(newCropWidth);
+            std::memcpy(cropWidth, tempCropWidth.data(), sizeof(char) * tempCropWidth.size());
+            std::string tempCropHeight = std::to_string(newCropHeight);
+            std::memcpy(cropHeight, tempCropHeight.data(), sizeof(char) * tempCropHeight.size());
+        }
 
         readCurrentCameraSettings();
     }

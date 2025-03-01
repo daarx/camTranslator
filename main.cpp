@@ -17,6 +17,7 @@ int main() {
 
     // TODO list
     // [ ] Add option to also translate the text
+    // [ ] Keep results in memory instead of saving to disk
 
     return 0;
 }
